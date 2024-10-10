@@ -9,3 +9,5 @@
 ### Running Desparity FSM:
 ![image](https://github.com/user-attachments/assets/139f915d-f132-4f8d-983c-5d2976679664)
 
+### Eloborated design
+![image](https://github.com/user-attachments/assets/b6b1274c-90cf-45b9-937d-5ed04d8e6286)
