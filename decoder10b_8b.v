@@ -7,19 +7,22 @@ module decoder_10b8b(
     output reg [7:0] data_out);
 
     reg [7:0] decoded;
+    reg rd_prev;
 
     always @(posedge clk, negedge rst) begin
         if(!rst)begin
             data_out = 8'd0;
+            rd_prev = 0;
         end
         else begin
             data_out = decoded;
+            rd_prev = rd;
         end
     end
 
 
     always @(*) begin
-        case (rd)
+        case (rd_prev)
         1'b0: begin
             case (data_in[3:0])
                 4'b1011: decoded[7:5] = 3'b000;
