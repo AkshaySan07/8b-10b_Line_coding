@@ -28,7 +28,8 @@ module encoder_8b10b (
     output reg       rd);
 
     reg [9:0] encoded;
-    reg [3:0] count, i;
+    reg [3:0] count; 
+    integer i;
     reg       new_rd;
 
     always @(posedge clk, negedge rst) begin
@@ -44,17 +45,11 @@ module encoder_8b10b (
 
     always @(*) begin
 
-        count = 0;  // Initialize count to 0
+        /*count = 0;  // Initialize count to 0
         for (i = 0; i < 10; i = i + 1) begin
             count = count + encoded[i];  // Increment count for every '1' found in the vector
-        end
+        end */
         
-        if(count > 4'd5)
-            new_rd = 1'b1;
-        else if(count < 4'd5)
-            new_rd = 1'b0;
-        else 
-            new_rd = rd;       // count == 5 then equal number of 0's and 1's
 
         case (rd)
         1'b0: begin
@@ -158,14 +153,28 @@ module encoder_8b10b (
                 default: encoded[9:4] = 6'bxxxxxx; // Handle unexpected cases
             endcase
         end
-        endcase
-
-
+        endcase   
         
+        count = noofones(encoded);
+        
+        if(count > 4'd5)
+            new_rd = 1'b1;
+        else if(count < 4'd5)
+            new_rd = 1'b0;
+        else 
+            new_rd = rd;       // count == 5 then equal number of 0's and 1's
             
     end
+    
+    function integer noofones(input [9:0] enc);
+        integer j;
+        reg [3:0] ones;
+        begin
+            for (j = 0; j < 10; j = j + 1) begin
+                ones = ones + enc[j];  // Increment count for every '1' found in the vector
+            end
+            noofones = ones;
+        end        
+    endfunction
 
 endmodule
-
-
-

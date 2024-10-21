@@ -1,3 +1,24 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 10/18/2024 01:29:36 PM
+// Design Name: 
+// Module Name: decoder_10b8b
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
 
 module decoder_10b8b(
     input wire [9:0] data_in,
@@ -44,34 +65,34 @@ module decoder_10b8b(
                 6'b110101: decoded[4:0] = 5'd4;
                 6'b101001: decoded[4:0] = 5'd5;  // Does not depend on RD
                 6'b011001: decoded[4:0] = 5'd6;
-                6'b000111: decoded[4:0] = 5'd7;
-                6'b000110: decoded[4:0] = 5'd8;
+                6'b111000: decoded[4:0] = 5'd7;
+                6'b111001: decoded[4:0] = 5'd8;
                 6'b100101: decoded[4:0] = 5'd9;  // Does not depend on RD
-                6'b101010: decoded[4:0] = 5'd10;
-                6'b001101: decoded[4:0] = 5'd11;
-                6'b110010: decoded[4:0] = 5'd12;
-                6'b101101: decoded[4:0] = 5'd13;  // Does not depend on RD
-                6'b011001: decoded[4:0] = 5'd14;
-                6'b101100: decoded[4:0] = 5'd15;
-                6'b100100: decoded[4:0] = 5'd16;
-                6'b011100: decoded[4:0] = 5'd17;
-                6'b001101: decoded[4:0] = 5'd19;
-                6'b110100: decoded[4:0] = 5'd20;
+                6'b010101: decoded[4:0] = 5'd10;
+                6'b110100: decoded[4:0] = 5'd11;
+                6'b001101: decoded[4:0] = 5'd12;
+                6'b101100: decoded[4:0] = 5'd13;  // Does not depend on RD
+                6'b011100: decoded[4:0] = 5'd14;
+                6'b010111: decoded[4:0] = 5'd15;
+                6'b011011: decoded[4:0] = 5'd16;
+                6'b100011: decoded[4:0] = 5'd17;
+                6'b010011: decoded[4:0] = 5'd18;
+                6'b110010: decoded[4:0] = 5'd19;
+                6'b001011: decoded[4:0] = 5'd20;
                 6'b101010: decoded[4:0] = 5'd21;  // Does not depend on RD
-                6'b011001: decoded[4:0] = 5'd22;
-                6'b000101: decoded[4:0] = 5'd23;
+                6'b011010: decoded[4:0] = 5'd22;
+                6'b111010: decoded[4:0] = 5'd23;
                 6'b001100: decoded[4:0] = 5'd24;
                 6'b100110: decoded[4:0] = 5'd25;  // Does not depend on RD
-                6'b101010: decoded[4:0] = 5'd26;
-                6'b110010: decoded[4:0] = 5'd27;
-                6'b000110: decoded[4:0] = 5'd28;
-                6'b011110: decoded[4:0] = 5'd29;
-                6'b110011: decoded[4:0] = 5'd30;
-                6'b111100: decoded[4:0] = 5'd31;  // Does not depend on RD
+                6'b010110: decoded[4:0] = 5'd26;
+                6'b110110: decoded[4:0] = 5'd27;
+                6'b001110: decoded[4:0] = 5'd28;
+                6'b101110: decoded[4:0] = 5'd29;
+                6'b011110: decoded[4:0] = 5'd30;
+                6'b101011: decoded[4:0] = 5'd31;  // Does not depend on RD
                 default: decoded[4:0] = 5'bxxxxx;  // Invalid case
             endcase
-
-        endcase
+            end
 
         1'b1: begin
             case (data_in[3:0])  // Decode the lower 4 bits
@@ -97,31 +118,32 @@ module decoder_10b8b(
                 6'b000111: decoded[4:0] = 5'd7;
                 6'b000110: decoded[4:0] = 5'd8;
                 6'b100101: decoded[4:0] = 5'd9;  // Does not depend on RD
-                6'b010001: decoded[4:0] = 5'd10;
-                6'b110010: decoded[4:0] = 5'd11;
-                6'b001001: decoded[4:0] = 5'd12;
-                6'b101101: decoded[4:0] = 5'd13;  // Does not depend on RD
-                6'b011001: decoded[4:0] = 5'd14;
-                6'b010011: decoded[4:0] = 5'd15;
-                6'b011011: decoded[4:0] = 5'd16;
+                6'b010101: decoded[4:0] = 5'd10;
+                6'b110100: decoded[4:0] = 5'd11;
+                6'b001101: decoded[4:0] = 5'd12;
+                6'b101100: decoded[4:0] = 5'd13;  // Does not depend on RD
+                6'b011100: decoded[4:0] = 5'd14;
+                6'b101000: decoded[4:0] = 5'd15;
+                6'b100100: decoded[4:0] = 5'd16;
                 6'b100011: decoded[4:0] = 5'd17;
+                6'b010011: decoded[4:0] = 5'd18;
                 6'b110010: decoded[4:0] = 5'd19;
                 6'b001011: decoded[4:0] = 5'd20;
                 6'b101010: decoded[4:0] = 5'd21;  // Does not depend on RD
-                6'b011001: decoded[4:0] = 5'd22;
+                6'b011010: decoded[4:0] = 5'd22;
                 6'b000101: decoded[4:0] = 5'd23;
-                6'b110011: decoded[4:0] = 5'd24;
+                6'b001100: decoded[4:0] = 5'd24;
                 6'b100110: decoded[4:0] = 5'd25;  // Does not depend on RD
-                6'b010101: decoded[4:0] = 5'd26;
-                6'b001101: decoded[4:0] = 5'd27;
-                6'b111000: decoded[4:0] = 5'd28;
-                6'b100001: decoded[4:0] = 5'd29;
-                6'b001100: decoded[4:0] = 5'd30;
-                6'b111100: decoded[4:0] = 5'd31;  // Does not depend on RD
+                6'b010110: decoded[4:0] = 5'd26;
+                6'b001001: decoded[4:0] = 5'd27;
+                6'b001110: decoded[4:0] = 5'd28;
+                6'b010001: decoded[4:0] = 5'd29;
+                6'b100001: decoded[4:0] = 5'd30;
+                6'b010100: decoded[4:0] = 5'd31;  // Does not depend on RD
                 default: decoded[4:0] = 5'bxxxxx;  // Invalid case
-            endcase
-        end
-
+            endcase   
+        end       
+        endcase
     end
 
 
