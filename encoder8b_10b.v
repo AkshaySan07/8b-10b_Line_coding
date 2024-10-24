@@ -168,8 +168,9 @@ module encoder_8b10b (
     
     function integer noofones(input [9:0] enc);
         integer j;
-        reg [3:0] ones;
+        integer ones;
         begin
+            ones = 0;
             for (j = 0; j < 10; j = j + 1) begin
                 ones = ones + enc[j];  // Increment count for every '1' found in the vector
             end
