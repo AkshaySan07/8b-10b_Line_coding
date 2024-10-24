@@ -4,19 +4,9 @@
 // Engineer: 
 // 
 // Create Date: 10/18/2024 01:29:36 PM
-// Design Name: 
+// Design Name: Physical Layer (Logical)
 // Module Name: decoder_10b8b
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+// Project Name: PCIexpress
 //////////////////////////////////////////////////////////////////////////////////
 
 
