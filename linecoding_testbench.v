@@ -22,7 +22,7 @@ wire [9:0] data_out;
 wire rd;
 
 encoder_8b10b ENC1(data_in,clk,rst,data_out,rd);
-decoder_10b8b DEC1(data_out,rd,clk,rst,decoded);
+decoder_10b8b DEC1(data_out,clk,rst,decoded);
 
 assign error = (golden !== decoded) ? 1'b1:1'b0; 
 
