@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: SSwitch Technologies
+// Engineer: Akshay V
 // 
 // Create Date: 10/18/2024 01:29:36 PM
 // Design Name: Physical Layer (Logical)
