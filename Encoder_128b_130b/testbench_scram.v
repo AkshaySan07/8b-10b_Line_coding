@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module tb_scram();
     reg [7:0] DLL_data;
     reg clk_1G, clk_8G, rst_1G, rst_mod;    

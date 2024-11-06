@@ -13,11 +13,13 @@
 /*
 ||-------------------------------------Design-Comments---------------------------------------------||
 ||-------------------------------------------------------------------------------------------------||
- => The LFSR reset can be activated by scram_control block if it detects certain ordereed symbols.
- => We need proper control logic from enables and resets. Enables are responsible for proper sync
-    between LFSR feed values and DLL_data. en_scram[1] should only go high with the posedge of clk1,
-    so that there will be a full feed register by the next posedge on clk1.
- => 23'h1DBFBC feed value is defined by the standard. The polynomial is also defined along with it.
+ =>(1):The LFSR reset can be activated by scram_control block if it detects certain ordereed symbols.
+ =>(2):The clocks should be generated from the same PLL(therefore synchronous). Should have the same rising 
+       edge.
+ =>(3):We need proper control logic from enables and resets. Enables are responsible for proper sync
+       between LFSR feed values and DLL_data. en_scram[1] should only go high with the posedge of clk1,
+       so that there will be a full feed register by the next posedge on clk1.
+ =>(4):23'h1DBFBC feed value is defined by the standard. The polynomial is also defined along with it.
 */
 
 module scrambler_23b(

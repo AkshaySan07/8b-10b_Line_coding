@@ -9,36 +9,38 @@
 // Project Name: PCIexpress 3.0
 //////////////////////////////////////////////////////////////////////////////////
 
-module Top_module_logical(
+module Top_module_logical_Tx(
     input clk_1G,
     input clk_8G,
     input rst_1G,
     input rst_8G,
+    input rst_mod,
     input k,
     input tx_valid,
     input tx_start,
-    input [7:0] scram_data_out,
+    input [7:0] DLL_data,
+    input [1:0] en_scram,
     output data_out
 );
 
 //wire [1:0] en_scram;
 wire serial_data;
 wire fifo_out;
-//wire [7:0] scram_data_out;
+wire [7:0] scram_data_out;
 
 wire sy2;
 wire syblk2;
-    
+
+scrambler_23b SC1(DLL_data, clk_1G, clk_8G, rst1G, rst_mod, en_scram, scram_data_out); // 23 bit LFSR with different seed values based on the lane number.
 header_synchronizer HS1(clk_8G, rst_8G, tx_start, k, sy2, syblk2);
 //scram_control SC1(DLL_data, clk_1G, rst_1G, en_scram); // Blackbox this for now, write the control based on scrambling rules. 1 bit should be used for not forwarding LFSR, 1 bit for not scrambling.
-//scrambler_23b SB1(DLL_data, clk_1G, clk_8G, rst_1G, rst_8G, en_scram, scram_data_out); // 23 bit LFSR with different seed values based on the lane number. 
 piso_serial8b PI1(scram_data_out, clk_1G, rst_1G, clk_8G, rst_8G, serial_data); // Continuous serialization of bits without any delay between cycles
 fifo_sync     ff1(serial_data, clk_8G, rst_8G, sy2, tx_valid, fifo_out); // tx_valid is used for write_en, tx_start is used for read_en
 sync_head_add SH1(fifo_out, clk_8G, rst_8G, sy2, syblk2, data_out); // Use tx_start for muxing between fifo_out and synchead bits
     
 endmodule
 
-
+/*
 module header_synchronizer (
     input clk_8G,
     input rst_8G,
@@ -66,6 +68,37 @@ always @(posedge clk_8G,negedge rst_8G) begin
     end    
     
 endmodule
+*/
+
+module header_synchronizer (
+    input clk_8G,
+    input rst_8G,
+    input tx_start,
+    input k,
+    output tx_s,
+    output k_synced);
+
+reg [11:0] syblk;
+reg [11:0] sy1;
+
+assign tx_s = syblk[11];
+assign k_synced = sy1[11];
+
+always @(posedge clk_8G,negedge rst_8G) begin
+        if(!rst_8G) begin
+            syblk <= 0;
+            sy1 <= 0;
+        end
+        else begin
+            syblk <= {syblk[10:0],tx_start};
+            sy1 <= {sy1[10:0],k};
+        end    
+    end    
+    
+endmodule
+
+
+
 
 module piso_serial8b (
     input [7:0] scram_data_out,
