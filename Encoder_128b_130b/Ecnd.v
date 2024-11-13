@@ -38,24 +38,43 @@ module Top_module_logical_Tx1(
     input k,
     input tx_valid,
     input tx_start,
-    input [7:0] DLL_data,
+    input [31:0] DLL_data,
     input [1:0] en_scram,
-    output data_out
+    output data_out0,
+    output data_out1,
+    output data_out2,
+    output data_out3
 );
 
-wire serial_data;
-wire [7:0] scram_data_out;
 
-wire sy2;
-wire syblk2;
+wire serial_data[3:0];
+wire [7:0] scram_data_out[3:0];
+
+wire sy_s;
+wire sy_k;
 wire sy_v;
+wire sy_spul;
+wire [7:0] Lane [3:0];
+wire data_out[3:0];
+wire rst_gen;
+wire [1:0] lanenum [3:0];
 
-scrambler_23b SC1(DLL_data, clk_1G, clk_8G, rst_1G, rst_mod, en_scram, scram_data_out); // 23 bit LFSR with different seed values based on the lane number.
-header_synchronizer1 HS1(clk_8G, rst_8G, tx_start, tx_valid, k, sy2, syblk2, sy_v);
-//scram_control SC1(DLL_data, clk_1G, rst_1G, en_scram); // Blackbox this for now, write the control based on scrambling rules. 1 bit should be used for not forwarding LFSR, 1 bit for not scrambling.
-piso_serial8b1 PI1(scram_data_out, clk_1G, rst_1G, clk_8G, rst_8G, serial_data); // Continuous serialization of bits without any delay between cycles
-fifo_sync1     ff1(serial_data, clk_8G, rst_8G, sy2, sy_v, syblk2, data_out); 
+assign rst_gen = rst_8G & rst_mod;
+assign {data_out3,data_out2,data_out1,data_out0} = {data_out[3],data_out[2],data_out[1],data_out[0]};
 
+byte_striping BT1(DLL_data, clk_1G, rst_1G, Lane[0], Lane[1], Lane[2], Lane[3]);
+header_synchronizer1 HS1(clk_1G, rst_1G, tx_start, tx_valid, k, sy_s, sy_k, sy_v);
+levtopulse LP1(clk_8G, rst_8G, sy_s, sy_spul);
+
+genvar i;
+generate for(i=0;i<4;i=i+1) begin : instanses
+    assign lanenum[i] = i;
+    scrambler_23b SC1 (Lane[i], clk_1G, clk_8G, rst_1G, rst_mod, en_scram, lanenum[i], scram_data_out[i]); // 23 bit LFSR with different seed values based on the lane number.
+    //scram_control SC1(DLL_data, clk_1G, rst_1G, en_scram); // Blackbox this for now, write the control based on scrambling rules. 1 bit should be used for not forwarding LFSR, 1 bit for not scrambling.
+    piso_serial8b1 PI1(scram_data_out[i], clk_1G, rst_1G, clk_8G, rst_8G, serial_data[i]); // Continuous serialization of bits without any delay between cycles
+    fifo_sync1     ff1(serial_data[i], clk_8G, rst_8G, sy_spul, sy_v, sy_k, data_out[i]); 
+    end
+endgenerate
     
 endmodule
 
@@ -70,29 +89,52 @@ module header_synchronizer1 (
     output k_synced,
     output tx_v);
 
-reg [8:0] syblk;
-reg [8:0] syhhh;
-reg [8:0] sy1;
+reg [2:0] syblk;
+reg [2:0] syhhh;
+reg [2:0] sy1;
 
-assign tx_s = syblk[8];
-assign k_synced = sy1[8];
-assign tx_v = syhhh[8];
+assign tx_s = syblk[1];
+assign k_synced = sy1[2];
+assign tx_v = syhhh[2];
 
 always @(posedge clk_8G,negedge rst_8G) begin
-        if(!rst_8G) begin
-            syblk <= 0;
-            sy1 <= 0;
-            syhhh <= 0;
-        end
-        else begin
-            syblk <= {syblk[7:0],tx_start};
-            sy1 <= {sy1[7:0],k};
-            syhhh <= {syhhh[7:0],tx_valid};
-        end    
+    if(!rst_8G) begin
+        syblk <= 0;
+        sy1 <= 0;
+        syhhh <= 0;
+    end
+    else begin
+        syblk <= {syblk[1:0],tx_start};
+        sy1 <= {sy1[1:0],k};
+        syhhh <= {syhhh[1:0],tx_valid};
     end    
+end    
     
 endmodule
 
+module levtopulse (
+    input clk_8G,
+    input rst_8G,
+    input lev,
+    output pulse
+);
+
+reg state;
+
+assign pulse = (state & ~lev);
+
+always @(posedge clk_8G,negedge rst_8G) begin
+    if(!rst_8G) begin
+        state <= 1'b0;
+       // pulse <= 1'b0;
+    end
+    else begin
+        state <= lev;
+       // pulse <= (~state & lev);
+    end  
+end
+    
+endmodule
 
 
 module piso_serial8b1 (
@@ -107,7 +149,7 @@ module piso_serial8b1 (
     reg [7:0] piso;
     reg [2:0] i;
 
-    assign serial_data = piso[i]; 
+   assign serial_data = piso[i]; 
 
     always @(posedge clk_1G, negedge rst_1G) begin
         if (!rst_1G) begin
@@ -120,17 +162,17 @@ module piso_serial8b1 (
 
     always @(posedge clk_8G, negedge rst_8G) begin
         if (!rst_8G) begin
-            i <= 7;
+            i <= 3'd7;
         end
         else begin
-            i <= i+1;
+            i <= i + 3'd1;
         end
     end
     
 endmodule
 
 
-/*
+
 module fifo_sync1 (
     input serial_data,
     input clk_8G,
@@ -141,54 +183,71 @@ module fifo_sync1 (
     output fifo_out
 );
 
-reg [127:0] mem;
-reg [7:0] wptr;
-reg [7:0] rptr;
+reg [255:0] mem;
+reg [8:0] wptr;
+reg [8:0] rptr;
 wire full,empty;
 wire [1:0] sync_head;
-wire rst_gen;
 
-
-//assign rst_gen = tx_valid & rst_8G;
 assign sync_head = (k_synced) ? 2'b01 : 2'b10;
 
 //assign full = ({!wptr[9],wptr[8:0]} == rptr-9'd1 || {!wptr[9],wptr[8:0]} == rptr) ? 1'b1 : 1'b0;
-assign full = (({!wptr[7],wptr[6:0]} == (rptr-8'd1)) && (tx_start == 1)) ? 1'b1 : 1'b0;
+assign full = ({!wptr[8],wptr[7:0]} == (rptr[8:0])) ? 1'b1 : 1'b0;
 assign empty = (wptr == rptr) ? 1'b1 : 1'b0;
-assign fifo_out = (!empty) ? mem[rptr[6:0]] : 1'b0;
+assign fifo_out = (!empty) ? mem[rptr[7:0]] : (tx_start ? sync_head[0] : 1'b0);
 
 always @(posedge clk_8G, negedge rst_8G) begin
     if (!rst_8G) begin
-        wptr <= 8'd0;
-        rptr <= 8'd0;
-    end
-    else if(tx_start) begin
-        wptr <= (!full && tx_valid) ? (wptr + 8'd3) : (wptr);
-        rptr <= (!empty) ? (rptr + 8'd1) : (rptr);
+        rptr <= 9'd0;
     end
     else begin
-        wptr <= (!full && tx_valid) ? (wptr + 8'd1) : (wptr);
-        rptr <= (!empty) ? (rptr + 8'd1) : (rptr);
+        rptr <= (!empty) ? (rptr + 9'd1) : (rptr);
+    end
+//    else if (rptr[8:0] == 8'd129) begin
+//        rptr <= {~rptr[8],8'd0};
+//    end
+//    else if(tx_start) begin
+//        rptr <= (!empty) ? (rptr + 9'd1) : rptr;
+//    end
+end
+always @(posedge clk_8G, negedge rst_8G) begin
+    if (!rst_8G) begin
+        wptr <= 9'd0;
+    end
+//    else if (wptr[8:0] == 8'd129) begin
+//        wptr <= {~wptr[8],8'd0};
+//    end
+    else if(tx_start) begin
+        wptr <= (!full && tx_valid) ? (!empty ? (wptr + 9'd3) : (wptr + 9'd2)) : (wptr);
+    end
+    else begin
+        wptr <= (!full && tx_valid) ? (wptr + 9'd1) : (wptr);
     end
 end
 
 always @(posedge clk_8G) begin
     if (tx_start && tx_valid && !full) begin
-        mem[wptr[6:0]+7'd2] <= serial_data;
-        mem[wptr[6:0]+7'd1] <= sync_head[1];
-        mem[wptr[6:0]] <= sync_head[0];
+//        mem[wptr[7:0]+8'd2] <= serial_data;
+//        mem[wptr[7:0]+8'd1] <= sync_head[1];
+//        mem[wptr[7:0]] <= sync_head[0];
+        {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]} <= !empty ? {serial_data,sync_head[1:0]} : {mem[wptr[7:0]+8'd2], serial_data, sync_head[1]};
     end
+//    else if (tx_start && tx_valid && !full) begin
+//        mem[wptr[7:0]+8'd1] <= serial_data;
+//        mem[wptr[7:0]] <= sync_head[1];
+//    end
     else if(tx_valid && !full) begin
-        mem[wptr[6:0]] <= serial_data;
+        {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]} <= {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], serial_data};
     end
     else begin
-        mem[wptr[6:0]] <= wptr[wptr[6:0]];
+        {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]} <= {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]};
     end
 end
     
 endmodule
-*/
 
+
+/*
 module fifo_sync1 (
     input serial_data,
     input clk_8G,
@@ -211,16 +270,22 @@ wire rst_gen;
 assign sync_head = (k_synced) ? 2'b01 : 2'b10;
 
 //assign full = ({!wptr[9],wptr[8:0]} == rptr-9'd1 || {!wptr[9],wptr[8:0]} == rptr) ? 1'b1 : 1'b0;
-assign full = (({!wptr[8],wptr[7:0]} == (rptr[7:0]-8'd1)) && (tx_start == 1)) ? 1'b1 : 1'b0;
+assign full = (({!wptr[8],wptr[7:0]} == (rptr[8:0])) && (tx_start == 1)) ? 1'b1 : 1'b0;
 assign empty = (wptr == rptr) ? 1'b1 : 1'b0;
-assign fifo_out = (!empty) ? mem[rptr[6:0]] : (tx_start ? sync_head[0] : 1'b0);
+assign fifo_out = (!empty) ? mem[rptr[7:0]] : (tx_start ? sync_head[0] : 1'b0);
 
 always @(posedge clk_8G, negedge rst_8G) begin
     if (!rst_8G) begin
         rptr <= 9'd0;
     end
-    else if (rptr[7:0] == 8'd130) begin
+    else if (rptr[7:0] == 8'd129) begin
         rptr <= {~rptr[8],8'd0};
+    end
+    else if (rptr[7:0] == 8'd130) begin
+        rptr <= {~rptr[8],8'd1};
+    end
+    else if (rptr[7:0] == 8'd131) begin
+        rptr <= {~rptr[8],8'd2};
     end
     else if(tx_start) begin
         rptr <= (!empty) ? ({rptr[8],rptr[7:0] + 8'd1}) : rptr;
@@ -233,8 +298,14 @@ always @(posedge clk_8G, negedge rst_8G) begin
     if (!rst_8G) begin
         wptr <= 9'd0;
     end
-    else if (wptr[7:0] == 8'd130) begin
+    else if (wptr[7:0] == 8'd129) begin
         wptr <= {~wptr[8],8'd0};
+    end
+    else if (wptr[7:0] == 8'd130) begin
+        wptr <= {~wptr[8],8'd1};
+    end 
+    else if (wptr[7:0] == 8'd131) begin
+        wptr <= {~wptr[8],8'd2};
     end
     else if(tx_start) begin
         wptr <= (!full && tx_valid) ? ((!empty) ? ({wptr[8],wptr[7:0] + 8'd3}) : ({wptr[8],wptr[7:0]+8'd2})) : (wptr);
@@ -246,7 +317,7 @@ end
 
 always @(posedge clk_8G) begin
     if (tx_start && tx_valid && !full) begin
-        mem[wptr[6:0]+7'd1] <= serial_data;
+        mem[wptr[7:0]+7'd1] <= serial_data;
         mem[wptr[6:0]] <= sync_head[1];
     end
     else if(tx_valid && !full) begin
@@ -256,7 +327,28 @@ always @(posedge clk_8G) begin
         mem[wptr[6:0]] <= wptr[wptr[6:0]];
     end
 end
+
+always @(posedge clk_8G) begin
+    if (tx_start && tx_valid && !full && !empty) begin
+        mem[wptr[7:0]+8'd2] <= serial_data;
+        mem[wptr[7:0]+8'd1] <= sync_head[1];
+        mem[wptr[7:0]] <= sync_head[0];
+    end
+    else if (tx_start && tx_valid && !full) begin
+        mem[wptr[7:0]+8'd1] <= serial_data;
+        mem[wptr[7:0]] <= sync_head[1];
+    end
+    else if(tx_valid && !full) begin
+        mem[wptr[7:0]] <= serial_data;
+    end
+    else begin
+        mem[wptr[7:0]] <= mem[wptr[7:0]];
+    end
+end
+
     
 endmodule
+*/
+
 
 

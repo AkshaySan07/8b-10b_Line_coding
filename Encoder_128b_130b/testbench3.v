@@ -21,7 +21,7 @@
 
 
 module tb_encode_seri();
-  reg [7:0] DLL_data;
+  reg [31:0] DLL_data;
   reg clk1;
   reg rst1;
   reg clk8;
@@ -31,10 +31,12 @@ module tb_encode_seri();
   reg [1:0] en_scram;
   reg rst_mod;
 
-  wire data_out;
+  wire data_out0,data_out1,data_out2,data_out3;
+  
+  //integer count1,count0,Running_disp;
   
  
-  Top_module_logical_Tx1 TL1(clk1,clk8,rst1,rst8,rst_mod,k,tx_valid,tx_start,DLL_data,en_scram,data_out);
+  Top_module_logical_Tx1 TL1(clk1,clk8,rst1,rst8,rst_mod,k,tx_valid,tx_start,DLL_data,en_scram,data_out0,data_out1,data_out2,data_out3);
   
   initial begin
     rst1 = 0;
@@ -66,14 +68,13 @@ module tb_encode_seri();
   initial begin
     #9 tx_start = 1;
     k = 1'b1;
-    #2 tx_start = 0;
-    k = 1'bx;
+    #16 tx_start = 0;
+    #224;
     repeat(68) begin
-    #254;
     tx_start = 1;
-    k = 1'b0;
-    #2 tx_start = 0;
-    k = 1'bx;
+    k = $random;
+    #16 tx_start = 0;
+    #240;
     end
   end
   
@@ -83,13 +84,15 @@ module tb_encode_seri();
     #9 tx_valid = 1;
     en_scram = 2'd3;
     #16384 tx_valid = 0;
+    #512 tx_valid = 1;
   end
 
   
   initial begin
-    #8 rst1 = 1'b1;
+    #9 rst1 = 1'b1;
     rst8 = 1'b1;
     rst_mod = 1'b1;
   end
+  
   
 endmodule
