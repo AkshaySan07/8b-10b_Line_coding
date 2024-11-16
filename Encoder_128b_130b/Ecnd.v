@@ -70,7 +70,7 @@ genvar i;
 generate for(i=0;i<4;i=i+1) begin : instanses
     assign lanenum[i] = i;
     scrambler_23b SC1 (Lane[i], clk_1G, clk_8G, rst_1G, rst_mod, en_scram, lanenum[i], scram_data_out[i]); // 23 bit LFSR with different seed values based on the lane number.
-    //scram_control SC1(DLL_data, clk_1G, rst_1G, en_scram); // Blackbox this for now, write the control based on scrambling rules. 1 bit should be used for not forwarding LFSR, 1 bit for not scrambling.
+    //LTSSM SC1(DLL_data, clk_1G, rst_1G, en_scram); // Blackbox this for now, write the control based on scrambling rules. 1 bit should be used for not forwarding LFSR, 1 bit for not scrambling.
     piso_serial8b1 PI1(scram_data_out[i], clk_1G, rst_1G, clk_8G, rst_8G, serial_data[i]); // Continuous serialization of bits without any delay between cycles
     fifo_sync1     ff1(serial_data[i], clk_8G, rst_8G, sy_spul, sy_v, sy_k, data_out[i]); 
     end
