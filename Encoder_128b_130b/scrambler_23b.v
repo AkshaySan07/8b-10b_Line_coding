@@ -23,17 +23,17 @@
 */
 
 module scrambler_23b (
-    input [7:0] DLL_data,
+    input [127:0] DLL_data,
     input clk_1G,
     input clk_8G,
     input rst_1G,
     input rst_mod,           
     input [1:0] en_scram,
     input [1:0] lanenum,
-    output [7:0] scram_data_out
+    output [127:0] scram_data_out
 );
 
-wire [7:0] feed;
+wire [127:0] feed;
 reg [7:0] scram_data, feed_reg;
 
 LFSR_23b LR1 (clk_8G, rst_mod, en_scram[1], lanenum, feed);

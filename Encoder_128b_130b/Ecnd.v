@@ -189,11 +189,14 @@ reg [8:0] rptr;
 wire full,empty;
 wire [1:0] sync_head;
 
+// The control signal is used to generate the sync header. 
 assign sync_head = (k_synced) ? 2'b01 : 2'b10;
 
-//assign full = ({!wptr[9],wptr[8:0]} == rptr-9'd1 || {!wptr[9],wptr[8:0]} == rptr) ? 1'b1 : 1'b0;
+// Full empty conditions for the FIFO
 assign full = ({!wptr[8],wptr[7:0]} == (rptr[8:0])) ? 1'b1 : 1'b0;
 assign empty = (wptr == rptr) ? 1'b1 : 1'b0;
+
+// Final Output 
 assign fifo_out = (!empty) ? mem[rptr[7:0]] : (tx_start ? sync_head[0] : 1'b0);
 
 always @(posedge clk_8G, negedge rst_8G) begin
@@ -203,20 +206,11 @@ always @(posedge clk_8G, negedge rst_8G) begin
     else begin
         rptr <= (!empty) ? (rptr + 9'd1) : (rptr);
     end
-//    else if (rptr[8:0] == 8'd129) begin
-//        rptr <= {~rptr[8],8'd0};
-//    end
-//    else if(tx_start) begin
-//        rptr <= (!empty) ? (rptr + 9'd1) : rptr;
-//    end
 end
 always @(posedge clk_8G, negedge rst_8G) begin
     if (!rst_8G) begin
         wptr <= 9'd0;
     end
-//    else if (wptr[8:0] == 8'd129) begin
-//        wptr <= {~wptr[8],8'd0};
-//    end
     else if(tx_start) begin
         wptr <= (!full && tx_valid) ? (!empty ? (wptr + 9'd3) : (wptr + 9'd2)) : (wptr);
     end
@@ -227,15 +221,8 @@ end
 
 always @(posedge clk_8G) begin
     if (tx_start && tx_valid && !full) begin
-//        mem[wptr[7:0]+8'd2] <= serial_data;
-//        mem[wptr[7:0]+8'd1] <= sync_head[1];
-//        mem[wptr[7:0]] <= sync_head[0];
         {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]} <= !empty ? {serial_data,sync_head[1:0]} : {mem[wptr[7:0]+8'd2], serial_data, sync_head[1]};
     end
-//    else if (tx_start && tx_valid && !full) begin
-//        mem[wptr[7:0]+8'd1] <= serial_data;
-//        mem[wptr[7:0]] <= sync_head[1];
-//    end
     else if(tx_valid && !full) begin
         {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], mem[wptr[7:0]]} <= {mem[wptr[7:0]+8'd2], mem[wptr[7:0]+8'd1], serial_data};
     end
